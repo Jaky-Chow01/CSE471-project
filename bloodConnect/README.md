@@ -48,7 +48,8 @@ The repository implements a **Feature Branching** workflow to maintain code inte
 
 1.  **Clone the Repository:**
     ```bash
-    git clone https://github.com/username/bloodconnect.git
+    git clone https://github.com/Jaky-Chow01/CSE471-project.git
+    git clone 
     cd bloodconnect
     ```
 2.  **Install Dependencies:**
