@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('blood_requests', function (Blueprint $table) {
+        Schema::create('bloodrequests', function (Blueprint $table) {
             $table->id();
             
             // 1. Change to string to store 'Urgent' or '' as requested

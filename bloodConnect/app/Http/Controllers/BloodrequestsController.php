@@ -18,28 +18,36 @@ class BloodrequestsController extends Controller
             $validated = $request->validate([
                 'bloodgroup' => 'required',
                 'location' => 'required|string',
-                'datetime' => 'required',
+                'datetime' => 'required|date|after:now',
                 'noofbags' => 'required|integer|min:1',
                 'patienttype' => 'required',
-                'patientage' => 'required|integer',
+                'patientage' => 'required|integer|min:0',
                 'patientgender' => 'required',
-                'contactno' => 'required',
+                'contactno' => 'required|string',
             ]);
 
             // Handling the 'urgent' checkbox (converts to string for your DB preference)
             $validated['urgent'] = $request->has('urgent') ? 'Urgent' : '';
+
+            if ($request->filled('latitude')) {
+                $validated['latitude'] = $request->input('latitude');
+            }
+            if ($request->filled('longitude')) {
+                $validated['longitude'] = $request->input('longitude');
+            }
 
             // Save to Database
             bloodrequests::create($validated);
 
             return redirect()->route('home')->with('success', 'Blood request submitted successfully.');
         }
+
     public function index()
     {
-    // Fetch the 5 most recent blood requests
-            $announcements = bloodrequests::orderBy('created_at', 'desc')->take(5)->get();
+        // Fetch the 5 most recent blood requests
+        $announcements = bloodrequests::latest('created_at')->take(5)->get();
 
-            return view('welcome', compact('announcements'));
+        return view('welcome', compact('announcements'));
     }
 
 
