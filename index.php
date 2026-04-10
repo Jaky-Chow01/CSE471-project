@@ -1,6 +1,5 @@
 <?php
-// index.php — BloodLink front-end served by PHP
-// Includes: style.php | module1.php | module2.php
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -18,7 +17,7 @@
 <body>
 <div class="shell">
 
-<!-- ═══ HEADER ═══ -->
+<!-- HEADER -->
 <header>
   <div class="logo-mark">🩸</div>
   <div class="logo-text">Blood<span>Link</span></div>
@@ -36,7 +35,7 @@
 
 <div class="body">
 
-<!-- ═══ SIDEBAR ═══ -->
+<!-- SIDEBAR -->
 <aside>
   <div class="s-section">Main</div>
   <div class="s-item active" id="snav-matching" onclick="showPage('matching')">
@@ -60,17 +59,17 @@
   </div>
 </aside>
 
-<!-- ═══ CONTENT ═══ -->
+<!-- CONTENT -->
 <div class="content">
 
 <?php include 'module1.php'; ?>
 <?php include 'module2.php'; ?>
 
-</div><!-- /content -->
-</div><!-- /body -->
-</div><!-- /shell -->
+</div>
+</div>
+</div>
 
-<!-- ═══ REGISTER DONOR MODAL ═══ -->
+<!-- REGISTER DONOR MODAL -->
 <div class="modal-overlay" id="register-modal">
   <div class="modal">
     <div class="modal-title">Register New Donor</div>
@@ -133,7 +132,7 @@
   </div>
 </div>
 
-<!-- ══ CARE NOTIFICATION POPUP ══ -->
+<!-- CARE NOTIFICATION POPUP -->
 <div id="notif-overlay" style="
   display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
   z-index:2000;align-items:center;justify-content:center;">
@@ -142,32 +141,31 @@
     padding:32px 36px;width:380px;text-align:center;position:relative;
     box-shadow:0 0 60px rgba(196,18,48,.25);">
 
-    <!-- pulsing icon -->
+ 
     <div id="notif-icon" style="font-size:52px;margin-bottom:12px;animation:notif-pulse 1s ease-in-out infinite">💧</div>
 
-    <!-- title -->
     <div id="notif-title" style="
       font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;
       color:#ff3355;letter-spacing:.4px;margin-bottom:8px">Notification</div>
 
-    <!-- message -->
+
     <div id="notif-msg" style="
       font-size:13px;color:#8888a8;font-family:'IBM Plex Mono',monospace;
       line-height:1.7;margin-bottom:24px"></div>
 
-    <!-- donor name badge -->
+    
     <div id="notif-donor" style="
       display:inline-block;padding:4px 14px;border-radius:20px;
       background:rgba(196,18,48,.12);border:1px solid rgba(196,18,48,.3);
       color:#ff3355;font-size:11px;font-family:'IBM Plex Mono',monospace;
       margin-bottom:24px;font-weight:700"></div>
 
-    <!-- time badge -->
+
     <div id="notif-time" style="
       font-size:10px;color:#44445a;font-family:'IBM Plex Mono',monospace;
       margin-bottom:20px"></div>
 
-    <!-- dismiss button -->
+
     <button onclick="closeNotifPopup()" style="
       width:100%;padding:12px;border-radius:8px;border:none;
       background:#c41230;color:#fff;font-family:'Barlow Condensed',sans-serif;
@@ -188,7 +186,7 @@
 </style>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────
+// ── CONFIG ─
 const API = 'api/api.php';
 const HOSP = {lat:23.7223, lng:90.3978, name:'Dhaka Medical College'};
 
@@ -198,7 +196,7 @@ let currentFilter = '';
 let selectedCareId = null;
 let donorMap = null;
 
-// ── FALLBACK SEED DATA (used when DB/API is unreachable) ─────
+// ── FALLBACK SEED DATA 
 function makeDateStr(daysAgo) {
   const d = new Date(); d.setDate(d.getDate() - daysAgo);
   return d.toISOString().slice(0, 10);
@@ -223,7 +221,7 @@ const SEED_CARE = {
   2:{hydration_start:'07:00',hydration_end:'19:00',rest_start:'08:00',rest_end:'18:00',nutrition_start:'06:00',nutrition_end:'20:00'},
 };
 
-// ── SAFE FETCH: returns null on any network/parse error ──────
+// ── SAFE FETCH
 async function safeFetch(url, options) {
   try {
     const res = await fetch(url, options);
@@ -236,7 +234,7 @@ async function safeFetch(url, options) {
   }
 }
 
-// ── BLOOD COMPAT ────────────────────────────────────────────
+// ── BLOOD COMPAT 
 const COMPAT_PCT = {
   'O-' : {'O-':100,'A-':92,'B-':92,'AB-':85,'O+':88,'A+':82,'B+':82,'AB+':78},
   'O+' : {'O-':90,'O+':100,'A-':75,'A+':82,'B-':75,'B+':82,'AB-':68,'AB+':78},
@@ -257,7 +255,7 @@ function calcDist(lat1,lng1,lat2,lng2){
   return(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))).toFixed(1);
 }
 
-// ── PAGE NAV ────────────────────────────────────────────────
+// ── PAGE NAV 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.s-item[id^="snav-"]').forEach(s=>s.classList.remove('active'));
@@ -267,7 +265,7 @@ function showPage(name) {
   if (name === 'care') renderCareDonorList();
 }
 
-// ── LOAD STATS ───────────────────────────────────────────────
+// ── LOAD STATS 
 async function loadStats() {
   const data = (await safeFetch(`${API}?action=get_stats`)) || SEED_STATS;
   document.getElementById('stat-total').textContent    = data.total_donors;
@@ -281,7 +279,7 @@ async function loadStats() {
     `${data.total_donors} donors registered · Dhaka region · real-time compatibility analysis`;
 }
 
-// ── LOAD REQUESTS (sidebar) ──────────────────────────────────
+// ── LOAD REQUESTS 
 async function loadRequests() {
   const data = (await safeFetch(`${API}?action=get_requests`)) || {requests: SEED_REQUESTS};
   const container = document.getElementById('sidebar-requests');
@@ -298,7 +296,7 @@ async function loadRequests() {
   `).join('');
 }
 
-// ── TABLE ───────────────────────────────────────────────────
+// ── TABLE 
 async function renderTable() {
   const bf = document.getElementById('blood-filter').value;
   const lf = document.getElementById('loc-filter').value;
@@ -376,7 +374,7 @@ function resetFilters() {
   renderTable();
 }
 
-// ── PROFILE ─────────────────────────────────────────────────
+// ── PROFILE 
 async function openProfile(id) {
   showPage('profile');
 
@@ -458,7 +456,7 @@ function initMap(donor) {
   donorMap.fitBounds(allPoints, {padding:[40,40]});
 }
 
-// ── CARE PANEL ───────────────────────────────────────────────
+// ── CARE PANEL 
 function renderCareDonorList() {
   const list = document.getElementById('care-donor-list');
   if (!DONORS.length) { list.innerHTML = '<div class="loading-cell">Load donors first</div>'; return; }
@@ -551,7 +549,7 @@ function playAlertSound() {
     osc.stop(ctx.currentTime + start + dur + 0.05);
   }
 
-  // Three ascending beeps — pleasant alert tone
+
   beep(520, 0.0,  0.18);
   beep(660, 0.22, 0.18);
   beep(800, 0.44, 0.35);
@@ -572,7 +570,7 @@ function closeNotifPopup() {
   document.getElementById('notif-overlay').style.display = 'none';
 }
 
-// ── RINGS ────────────────────────────────────────────────────
+// ── RINGS 
 function timeMins(t){ const [h,m] = (t||'00:00').split(':').map(Number); return h*60+m; }
 
 function updateRings() {
@@ -607,7 +605,7 @@ function updateRings() {
       openNotifPopup(icon, title, msg);
     }
     if (pct < 100) {
-      _notifFired[key] = false; // reset if schedule changes
+      _notifFired[key] = false; 
     }
   });
 }
@@ -620,7 +618,7 @@ function updateClocks() {
   updateRings();
 }
 
-// ── REGISTER MODAL ──────────────────────────────────────────
+// ── REGISTER MODAL 
 function openRegisterModal()  { document.getElementById('register-modal').classList.add('open'); }
 function closeRegisterModal() { document.getElementById('register-modal').classList.remove('open'); }
 
@@ -666,7 +664,7 @@ async function submitRegister() {
   }
 }
 
-// ── INIT ─────────────────────────────────────────────────────
+// ── INIT 
 document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([loadStats(), loadRequests()]);
   await renderTable();
