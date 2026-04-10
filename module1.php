@@ -1,6 +1,6 @@
-<?php // module1.php — BloodLink Module 1: Donor Matching Engine & Donor Profile ?>
+<?php?>
 
-<!-- ██ MODULE 1 — PAGE: MATCHING ENGINE ██ -->
+<!-- MATCHING ENGINE -->
 <div class="page active" id="page-matching">
   <div class="pg-title">Donor Matching Engine</div>
   <div class="pg-sub" id="match-sub">Loading donors…</div>
@@ -44,7 +44,7 @@
   </div>
 </div>
 
-<!-- ██ MODULE 1 — PAGE: DONOR PROFILE ██ -->
+<!--DONOR PROFILE -->
 <div class="page" id="page-profile">
   <button class="back-btn" onclick="showPage('matching')">← Back to Donor List</button>
   <div class="pg-title">Donor Profile</div>
