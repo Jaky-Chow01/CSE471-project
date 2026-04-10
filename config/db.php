@@ -1,13 +1,8 @@
 <?php
-// ============================================================
-//  BloodLink — Database Configuration
-//  Edit DB_USER / DB_PASS to match your XAMPP setup
-// ============================================================
-
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'bloodlink2');
-define('DB_USER', 'root');        // XAMPP default
-define('DB_PASS', '');            // XAMPP default (empty)
+define('DB_USER', 'root');        /
+define('DB_PASS', '');           
 define('DB_CHARSET', 'utf8mb4');
 
 function getDB(): PDO {
