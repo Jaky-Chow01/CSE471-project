@@ -1,4 +1,4 @@
-<?php // style.php — BloodLink CSS styles ?>
+<?php?>
 <style>
 :root{
   --bg:#0c0c0f;--bg2:#131318;--bg3:#1a1a22;--bg4:#21212c;
