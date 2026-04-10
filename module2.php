@@ -1,6 +1,6 @@
-<?php // module2.php — BloodLink Module 2: Post-Donation Care Panel ?>
+<?php?>
 
-<!-- ██ MODULE 2 — PAGE: POST-DONATION CARE ██ -->
+<!--POST-DONATION CARE-->
 <div class="page" id="page-care">
   <div class="pg-title">Post-Donation Care Panel</div>
   <div class="pg-sub">Notification schedules · hydration · rest · nutrition · recovery tracking</div>
