@@ -133,6 +133,60 @@
   </div>
 </div>
 
+<!-- ══ CARE NOTIFICATION POPUP ══ -->
+<div id="notif-overlay" style="
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);
+  z-index:2000;align-items:center;justify-content:center;">
+  <div style="
+    background:#131318;border:1px solid #383848;border-radius:14px;
+    padding:32px 36px;width:380px;text-align:center;position:relative;
+    box-shadow:0 0 60px rgba(196,18,48,.25);">
+
+    <!-- pulsing icon -->
+    <div id="notif-icon" style="font-size:52px;margin-bottom:12px;animation:notif-pulse 1s ease-in-out infinite">💧</div>
+
+    <!-- title -->
+    <div id="notif-title" style="
+      font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;
+      color:#ff3355;letter-spacing:.4px;margin-bottom:8px">Notification</div>
+
+    <!-- message -->
+    <div id="notif-msg" style="
+      font-size:13px;color:#8888a8;font-family:'IBM Plex Mono',monospace;
+      line-height:1.7;margin-bottom:24px"></div>
+
+    <!-- donor name badge -->
+    <div id="notif-donor" style="
+      display:inline-block;padding:4px 14px;border-radius:20px;
+      background:rgba(196,18,48,.12);border:1px solid rgba(196,18,48,.3);
+      color:#ff3355;font-size:11px;font-family:'IBM Plex Mono',monospace;
+      margin-bottom:24px;font-weight:700"></div>
+
+    <!-- time badge -->
+    <div id="notif-time" style="
+      font-size:10px;color:#44445a;font-family:'IBM Plex Mono',monospace;
+      margin-bottom:20px"></div>
+
+    <!-- dismiss button -->
+    <button onclick="closeNotifPopup()" style="
+      width:100%;padding:12px;border-radius:8px;border:none;
+      background:#c41230;color:#fff;font-family:'Barlow Condensed',sans-serif;
+      font-size:17px;font-weight:800;letter-spacing:.5px;cursor:pointer;
+      transition:background .15s"
+      onmouseover="this.style.background='#e01535'"
+      onmouseout="this.style.background='#c41230'">
+      ✓ Dismiss
+    </button>
+  </div>
+</div>
+
+<style>
+@keyframes notif-pulse {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.18); }
+}
+</style>
+
 <script>
 // ── CONFIG ──────────────────────────────────────────────────
 const API = 'api/api.php';
@@ -477,22 +531,92 @@ function resetCareCard(p,s,e){ document.getElementById(p+'-start').value=s; docu
 function resetAllCare(){ resetCareCard('hyd','08:00','20:00'); resetCareCard('rest','09:00','17:00'); resetCareCard('nut','07:00','21:00'); }
 
 function timeMins(t){const[h,m]=(t||'00:00').split(':').map(Number);return h*60+m;}
-function updateRings(){
-  const now=new Date(); const nowM=now.getHours()*60+now.getMinutes(); const C=131.95;
-  [['hyd-start','hyd-end','hyd-ring','hyd-pct'],
-   ['rest-start','rest-end','rest-ring','rest-pct'],
-   ['nut-start','nut-end','nut-ring','nut-pct']].forEach(([sId,eId,rId,pId])=>{
-    const s=timeMins(document.getElementById(sId).value);
-    const e=timeMins(document.getElementById(eId).value);
-    const total=e-s; const elapsed=Math.max(0,Math.min(nowM-s,total));
-    const pct=total>0?Math.round((elapsed/total)*100):0;
-    document.getElementById(rId).style.strokeDashoffset=C-(pct/100)*C;
-    document.getElementById(pId).textContent=pct+'%';
+
+// ── NOTIFICATION POPUP + SOUND ───────────────────────────────
+const _notifFired = { hyd: false, rest: false, nut: false };
+
+function playAlertSound() {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function beep(freq, start, dur, vol = 0.4) {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+    gain.gain.setValueAtTime(vol, ctx.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + dur + 0.05);
+  }
+
+  // Three ascending beeps — pleasant alert tone
+  beep(520, 0.0,  0.18);
+  beep(660, 0.22, 0.18);
+  beep(800, 0.44, 0.35);
+}
+
+function openNotifPopup(icon, title, msg) {
+  const donorName = document.querySelector('.cdp-item.active .cdp-name')?.textContent || 'Selected Donor';
+  document.getElementById('notif-icon').textContent  = icon;
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-msg').textContent   = msg;
+  document.getElementById('notif-donor').textContent = '👤 ' + donorName;
+  document.getElementById('notif-time').textContent  = 'Triggered at ' + new Date().toLocaleTimeString('en-GB');
+  document.getElementById('notif-overlay').style.display = 'flex';
+  playAlertSound();
+}
+
+function closeNotifPopup() {
+  document.getElementById('notif-overlay').style.display = 'none';
+}
+
+// ── RINGS ────────────────────────────────────────────────────
+function timeMins(t){ const [h,m] = (t||'00:00').split(':').map(Number); return h*60+m; }
+
+function updateRings() {
+  const now  = new Date();
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  const C    = 131.95;
+
+  const rings = [
+    { sId:'hyd-start',  eId:'hyd-end',  rId:'hyd-ring',  pId:'hyd-pct',  key:'hyd',
+      icon:'💧', title:'Hydration Complete!',
+      msg:'Great job staying hydrated today.\nAvoid alcohol for the next 24 hours post-donation.' },
+    { sId:'rest-start', eId:'rest-end', rId:'rest-ring', pId:'rest-pct', key:'rest',
+      icon:'🛌', title:'Rest Period Done!',
+      msg:'Your rest window has ended.\nYou can now gradually resume light activity.' },
+    { sId:'nut-start',  eId:'nut-end',  rId:'nut-ring',  pId:'nut-pct',  key:'nut',
+      icon:'🥗', title:'Nutrition Window Closed!',
+      msg:'Well done! Your iron and nutrients are replenishing.\nKeep eating iron-rich foods today.' },
+  ];
+
+  rings.forEach(({ sId, eId, rId, pId, key, icon, title, msg }) => {
+    const s     = timeMins(document.getElementById(sId).value);
+    const e     = timeMins(document.getElementById(eId).value);
+    const total = e - s;
+    const elapsed = Math.max(0, Math.min(nowM - s, total));
+    const pct   = total > 0 ? Math.round((elapsed / total) * 100) : 0;
+
+    document.getElementById(rId).style.strokeDashoffset = C - (pct / 100) * C;
+    document.getElementById(pId).textContent = pct + '%';
+
+    if (pct >= 100 && !_notifFired[key]) {
+      _notifFired[key] = true;
+      openNotifPopup(icon, title, msg);
+    }
+    if (pct < 100) {
+      _notifFired[key] = false; // reset if schedule changes
+    }
   });
 }
-function updateClocks(){
-  const ts=new Date().toLocaleTimeString('en-GB');
-  ['hyd-clock','rest-clock','nut-clock','rec-clock'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=ts;});
+
+function updateClocks() {
+  const ts = new Date().toLocaleTimeString('en-GB');
+  ['hyd-clock','rest-clock','nut-clock','rec-clock'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.textContent = ts;
+  });
   updateRings();
 }
 
