@@ -7,10 +7,16 @@ use Illuminate\Http\Request;
 
 class BloodbanksController extends Controller
 {
+    public function index()
+    {
+        $bloodbanks = bloodbanks::all();
+        return view('blood-banks', compact('bloodbanks'));
+    }
+
     public function addingbloodbank(Request $request)
     {
         $diag=new bloodbanks();
-        $diag->name=$request->name; 
+        $diag->name=$request->name;
         $diag->location=$request->location;
         $diag->contactno=$request->contactno;
         $diag->save() ;
@@ -19,8 +25,9 @@ class BloodbanksController extends Controller
 
     public function editingbloodbank(Request $request)
     {
-        $diag = bloodbanks::findOrFail($request->name);
+        $diag = bloodbanks::findOrFail($request->id);
 
+        $diag->name = $request->name;
         $diag->location = $request->location;
         $diag->contactno = $request->contactno;
 
@@ -31,7 +38,7 @@ class BloodbanksController extends Controller
     public function deletingbloodbank(Request $request)
 
     {
-        $diag = bloodbanks::findOrFail($request->name)->delete();
+        $diag = bloodbanks::findOrFail($request->id)->delete();
 
 
 
@@ -40,7 +47,7 @@ class BloodbanksController extends Controller
     }
     public function gettingbloodbank()
     {
-        $diag = bloodbanks::all();      
-        return response()->json($diag); 
+        $diag = bloodbanks::all();
+        return response()->json($diag);
     }
 }

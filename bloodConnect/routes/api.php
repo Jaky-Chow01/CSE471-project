@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BloodbanksController;
 use App\Http\Controllers\BloodrequestsController;
+use App\Http\Controllers\BloodtypeController;
 use App\Http\Controllers\DiagonosticcentersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
