@@ -1,6 +1,6 @@
-<?php?>
+<?php // module1.php — BloodLink Module 1: Donor Matching Engine & Donor Profile ?>
 
-<!-- MATCHING ENGINE -->
+<!-- ██ MODULE 1 — PAGE: MATCHING ENGINE ██ -->
 <div class="page active" id="page-matching">
   <div class="pg-title">Donor Matching Engine</div>
   <div class="pg-sub" id="match-sub">Loading donors…</div>
@@ -22,7 +22,7 @@
       <option value="O+">O+</option><option value="O-">O−</option>
     </select>
     <span class="tb-label">LOCATION</span>
-    <input type="text" id="loc-filter" placeholder="Filter by location…" oninput="renderTable()">
+    <input type="text" id="loc-filter" placeholder="Filter by location…">
     <button class="btn btn-red" onclick="renderTable()">Search</button>
     <button class="btn btn-ghost" onclick="resetFilters()">Reset</button>
     <span class="tb-count" id="result-count"></span>
@@ -44,7 +44,7 @@
   </div>
 </div>
 
-<!--DONOR PROFILE -->
+<!-- ██ MODULE 1 — PAGE: DONOR PROFILE ██ -->
 <div class="page" id="page-profile">
   <button class="back-btn" onclick="showPage('matching')">← Back to Donor List</button>
   <div class="pg-title">Donor Profile</div>
