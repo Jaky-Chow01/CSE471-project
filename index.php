@@ -96,15 +96,15 @@ session_start();
       <input type="text" id="reg-location" placeholder="e.g. 124/ABC Road, Dhaka">
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Latitude *</label>
-        <input type="text" id="reg-lat" placeholder="e.g. 23.8103">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Longitude *</label>
-        <input type="text" id="reg-lng" placeholder="e.g. 90.4125">
-      </div>
+    <div class="form-group">
+      <label class="form-label">Pin Location on Map *</label>
+      <button type="button" class="btn btn-ghost" id="reg-locate-btn" onclick="detectDonorLocation()" style="width:100%;margin-bottom:8px;">
+        📍 Use My Current Location
+      </button>
+      <div id="reg-location-status" style="font-size:12px;color:var(--text3);min-height:16px;font-family:'IBM Plex Mono',monospace;"></div>
+      <div id="reg-mini-map" style="display:none;height:160px;border-radius:8px;overflow:hidden;margin-top:8px;border:1px solid var(--border);"></div>
+      <input type="hidden" id="reg-lat">
+      <input type="hidden" id="reg-lng">
     </div>
 
     <div class="form-row">
@@ -610,8 +610,84 @@ function updateClocks() {
 }
 
 // ── REGISTER MODAL ──────────────────────────────────────────
-function openRegisterModal()  { document.getElementById('register-modal').classList.add('open'); }
+function openRegisterModal() {
+  document.getElementById('register-modal').classList.add('open');
+  document.getElementById('reg-lat').value = '';
+  document.getElementById('reg-lng').value = '';
+  document.getElementById('reg-location-status').textContent = '';
+  document.getElementById('reg-mini-map').style.display = 'none';
+  if (window._regMiniMap) { window._regMiniMap.remove(); window._regMiniMap = null; }
+  document.getElementById('reg-locate-btn').textContent = '📍 Use My Current Location';
+  document.getElementById('reg-locate-btn').disabled = false;
+}
 function closeRegisterModal() { document.getElementById('register-modal').classList.remove('open'); }
+
+function detectDonorLocation() {
+  const btn    = document.getElementById('reg-locate-btn');
+  const status = document.getElementById('reg-location-status');
+  const mapDiv = document.getElementById('reg-mini-map');
+
+  if (!navigator.geolocation) {
+    status.textContent = '⚠ Geolocation not supported by your browser.';
+    status.style.color = 'var(--amber-hi)';
+    return;
+  }
+
+  btn.textContent = '⏳ Detecting…';
+  btn.disabled = true;
+  status.textContent = 'Requesting location…';
+  status.style.color = 'var(--text3)';
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = parseFloat(pos.coords.latitude.toFixed(6));
+      const lng = parseFloat(pos.coords.longitude.toFixed(6));
+
+      document.getElementById('reg-lat').value = lat;
+      document.getElementById('reg-lng').value = lng;
+
+      status.textContent = '✓ Pinned at ' + lat + '°N, ' + lng + '°E';
+      status.style.color = 'var(--green, #2ec27e)';
+      btn.textContent = '✓ Location Pinned — Click to Re-pin';
+      btn.disabled = false;
+
+      mapDiv.style.display = 'block';
+      if (window._regMiniMap) { window._regMiniMap.remove(); window._regMiniMap = null; }
+      setTimeout(() => {
+        window._regMiniMap = L.map('reg-mini-map', { zoomControl: true, scrollWheelZoom: false })
+          .setView([lat, lng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '© OpenStreetMap', maxZoom: 19
+        }).addTo(window._regMiniMap);
+
+        const icon = L.divIcon({
+          className: '',
+          html: '<div style="background:var(--red,#c41230);width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 6px rgba(196,18,48,.8)"></div>',
+          iconSize: [14, 14], iconAnchor: [7, 7]
+        });
+        window._regMiniMarker = L.marker([lat, lng], { icon, draggable: true }).addTo(window._regMiniMap)
+          .bindPopup('Drag to adjust your pin').openPopup();
+
+        window._regMiniMarker.on('dragend', e => {
+          const p = e.target.getLatLng();
+          const la = parseFloat(p.lat.toFixed(6));
+          const ln = parseFloat(p.lng.toFixed(6));
+          document.getElementById('reg-lat').value = la;
+          document.getElementById('reg-lng').value = ln;
+          status.textContent = '✓ Pinned at ' + la + '°N, ' + ln + '°E';
+        });
+      }, 80);
+    },
+    err => {
+      const msgs = { 1: 'Location access denied.', 2: 'Position unavailable.', 3: 'Request timed out.' };
+      status.textContent = '⚠ ' + (msgs[err.code] || 'Location error.') + ' Enter address manually.';
+      status.style.color = 'var(--amber-hi, #f5a623)';
+      btn.textContent = '📍 Try Again';
+      btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
 
 function toggleNeverDonated(cb) {
   const dateInput = document.getElementById('reg-last-donation');
@@ -638,14 +714,14 @@ async function submitRegister() {
     email:         document.getElementById('reg-email').value.trim(),
     last_donation: document.getElementById('reg-never-donated').checked ? null : document.getElementById('reg-last-donation').value || null,
   };
-  if (!payload.name || !payload.blood_group || !payload.location || !payload.lat || !payload.lng || !payload.phone) {
+  if (!payload.name || !payload.blood_group || !payload.location || !payload.phone) {
     document.getElementById('register-status').textContent = 'Please fill all required fields.';
     document.getElementById('register-status').className   = 'status-bar status-err';
     return;
   }
 
-  if (isNaN(parseFloat(payload.lat)) || isNaN(parseFloat(payload.lng))) {
-    document.getElementById('register-status').textContent = 'Latitude and Longitude must be valid numbers.';
+  if (!payload.lat || !payload.lng) {
+    document.getElementById('register-status').textContent = 'Please pin your location on the map first.';
     document.getElementById('register-status').className   = 'status-bar status-err';
     return;
   }
