@@ -17,12 +17,18 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
+        User::updateOrCreate([
             'email' => 'test@example.com',
+        ], [
+            'name' => 'Test User',
         ]);
 
         $this->call([
+            BloodTypesSeeder::class,
+            BloodBanksSeeder::class,
+            BloodRequestsSeeder::class,
+            PostsSeeder::class,
+            DiagnosticCentersSeeder::class,
             DonationsSeeder::class,
         ]);
     }
