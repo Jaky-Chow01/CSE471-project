@@ -161,7 +161,43 @@
         </div>
     </div>
 
-    <footer class="fixed bottom-0 left-0 right-0 bg-red-600 py-4 shadow-[0_-4px_20px_rgba(220,38,38,0.2)] z-50">
+    <!-- Global Leaderboard Section -->
+    <div class="max-w-2xl mx-auto mt-16 px-4">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-bold text-gray-800">🏆 Global Leaderboard</h2>
+            <div class="h-1 flex-grow mx-4 bg-gray-200/50 rounded-full"></div>
+        </div>
+
+        <div class="bg-white/90 backdrop-blur-sm rounded-[2rem] shadow-sm overflow-hidden">
+            <div class="p-6">
+                <h3 class="text-md font-bold text-gray-700 mb-4">Top 10 Donors by Lifetime Donations</h3>
+                <div class="space-y-3">
+                    @forelse($topDonors as $index => $donor)
+                        <div class="flex items-center justify-between p-3 {{ $index < 3 ? 'bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400' : 'bg-gray-50' }} rounded-xl">
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center justify-center w-8 h-8 rounded-full {{ $index == 0 ? 'bg-yellow-400' : ($index == 1 ? 'bg-gray-400' : ($index == 2 ? 'bg-amber-600' : 'bg-gray-200')) }} text-white font-bold text-sm">
+                                    {{ $index + 1 }}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900">{{ $donor->name }}</p>
+                                    <p class="text-xs text-gray-500">{{ $donor->email }}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-bold text-red-600">{{ $donor->total_bags ?? 0 }} bags</p>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-8">
+                            <p class="text-gray-400 font-medium">No donations recorded yet.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-red-600 py-4 shadow-[0_-4px_15px_rgba(220,38,38,0.2)] z-50">
         <p class="text-white text-center font-bold text-sm tracking-wide">
             Every drop counts. Your request could save a life.
         </p>
@@ -386,16 +422,16 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
-                    const url = `https://www.openstreetmap.org/directions?engine=graphhopper_car&route=${userLat},${userLng};${encodeURIComponent(currentRequestLocation + ', Bangladesh')}`;
+                    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${encodeURIComponent(currentRequestLocation + ', Bangladesh')}&travelmode=driving`;
                     window.open(url, '_blank');
                 }, () => {
-                    // Fallback: just search for the location
-                    const url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(currentRequestLocation + ', Bangladesh')}`;
+                    // Fallback: just search for the location in Google Maps
+                    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentRequestLocation + ', Bangladesh')}`;
                     window.open(url, '_blank');
                 });
             } else {
-                // Fallback: just search for the location
-                const url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(currentRequestLocation + ', Bangladesh')}`;
+                // Fallback: just search for the location in Google Maps
+                const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentRequestLocation + ', Bangladesh')}`;
                 window.open(url, '_blank');
             }
         }

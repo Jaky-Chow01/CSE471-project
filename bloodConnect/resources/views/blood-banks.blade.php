@@ -209,16 +209,16 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     const userLat = position.coords.latitude;
                     const userLng = position.coords.longitude;
-                    const url = `https://www.openstreetmap.org/directions?engine=graphhopper_car&route=${userLat},${userLng};${encodeURIComponent(location + ', Bangladesh')}`;
+                    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${encodeURIComponent(location + ', Bangladesh')}&travelmode=driving`;
                     window.open(url, '_blank');
                 }, () => {
-                    // Fallback: just search for the location
-                    const url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(location + ', Bangladesh')}`;
+                    // Fallback: just search for the location in Google Maps
+                    const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location + ', Bangladesh')}`;
                     window.open(url, '_blank');
                 });
             } else {
-                // Fallback: just search for the location
-                const url = `https://www.openstreetmap.org/search?query=${encodeURIComponent(location + ', Bangladesh')}`;
+                // Fallback: just search for the location in Google Maps
+                const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location + ', Bangladesh')}`;
                 window.open(url, '_blank');
             }
         }

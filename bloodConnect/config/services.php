@@ -36,4 +36,8 @@ return [
         ],
     ],
 
+    'google' => [
+        'directions_api_key' => env('GOOGLE_DIRECTIONS_API_KEY'),
+    ],
+
 ];

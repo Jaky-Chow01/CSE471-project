@@ -47,7 +47,15 @@ class BloodrequestsController extends Controller
         // Fetch the 5 most recent blood requests
         $announcements = bloodrequests::latest('created_at')->take(5)->get();
 
-        return view('welcome', compact('announcements'));
+        // Fetch top 10 donors
+        $topDonors = \App\Models\User::withCount(['donations as total_bags' => function ($query) {
+            $query->selectRaw('sum(bags)');
+        }])
+        ->orderByDesc('total_bags')
+        ->take(10)
+        ->get();
+
+        return view('welcome', compact('announcements', 'topDonors'));
     }
 
 

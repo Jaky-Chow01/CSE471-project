@@ -3,6 +3,7 @@
 use App\Http\Controllers\BloodbanksController;
 use App\Http\Controllers\BloodrequestsController;
 use App\Http\Controllers\DiagonosticcentersController;
+use App\Http\Controllers\LeaderboardController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -24,3 +25,6 @@ Route::get('/diagnostic-centers', [DiagonosticcentersController::class, 'index']
 Route::get('/blood-types', function () {
     return view('blood-types');
 })->name('blood.types');
+
+// Leaderboard
+Route::get('/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard');

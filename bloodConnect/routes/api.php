@@ -4,6 +4,7 @@ use App\Http\Controllers\BloodbanksController;
 use App\Http\Controllers\BloodrequestsController;
 use App\Http\Controllers\BloodtypeController;
 use App\Http\Controllers\DiagonosticcentersController;
+use App\Http\Controllers\RouteController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,5 +49,7 @@ Route::post('add-bloodrequest', [BloodrequestsController::class,"addingbloodrequ
 Route::get('get-bloodrequest', [BloodrequestsController::class,"gettingbloodrequest"    ]);
 
 Route::put('edit-bloodrequest', [BloodrequestsController::class,"editingbloodrequest"       ]);
+
+Route::post('calculate-route', [RouteController::class, 'calculateRoute']);
 
 Route::delete('delete-bloodrequest', [BloodrequestsController::class,"deletingbloodrequest"                ]);

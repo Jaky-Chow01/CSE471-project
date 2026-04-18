@@ -46,4 +46,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function donations()
+    {
+        return $this->hasMany(Donation::class);
+    }
+
+    public function totalDonations()
+    {
+        return $this->donations()->sum('bags');
+    }
 }
