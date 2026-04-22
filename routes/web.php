@@ -75,6 +75,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::post('/api/dashboard/donor/toggle',   [DashboardController::class, 'toggleAvailability']);
     Route::post('/api/dashboard/requests/add',   [DashboardController::class, 'addRequest']);
     Route::post('/api/dashboard/requests/status',[DashboardController::class, 'updateRequestStatus']);
+    Route::post('/api/dashboard/confirmations/update', [DashboardController::class, 'updateConfirmation']);
     Route::get('/api/dashboard/analytics',       [DashboardController::class, 'getAnalytics']);
 });
 

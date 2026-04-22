@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Models\DonationRequest;
 use App\Models\BloodNotification;
+use App\Models\Donor;
 
 class TrackingController extends Controller
 {
@@ -141,6 +142,11 @@ class TrackingController extends Controller
 
         $this->sendInApp($newStage);
         $this->sendEmail($newStage, $req);
+
+        // When donation is completed (stage 4), mark donor as processed in confirmation queue
+        if ($newStage === 4 && $req->donorUser) {
+            Donor::where('email', $req->donorUser->email)->update(['queue_processed_at' => now()]);
+        }
 
         return redirect()->route('admin.track');
     }

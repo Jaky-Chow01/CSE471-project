@@ -134,14 +134,34 @@ class DashboardController extends Controller
 
     public function getConfirmations()
     {
-        
-        $donors = Donor::where('status', 'Available')->take(10)->get()->map(fn($d) => [
-            'name'        => $d->name,
-            'blood_group' => $d->blood_group,
-            'phone'       => $d->phone ?? '',
-            'location'    => $d->location ?? '',
-        ]);
+        $donors = Donor::where('status', 'Available')
+            ->whereNull('queue_processed_at')
+            ->take(10)
+            ->get()
+            ->map(fn($d) => [
+                'id'          => $d->id,
+                'name'        => $d->name,
+                'blood_group' => $d->blood_group,
+                'phone'       => $d->phone ?? '',
+                'location'    => $d->location ?? '',
+            ]);
         return response()->json($donors);
+    }
+
+    public function updateConfirmation(Request $request)
+    {
+        $request->validate(['donor_id' => 'required|exists:donors,id', 'action' => 'required|in:confirm,decline']);
+        $donor = Donor::findOrFail($request->donor_id);
+        if ($request->action === 'confirm') {
+            $donor->status = 'Available';
+            $donor->last_donation = now()->toDateString();
+        } else {
+            $donor->status = 'Unavailable';
+        }
+        // Mark as processed in confirmation queue so it won't appear again
+        $donor->queue_processed_at = now();
+        $donor->save();
+        return response()->json(['success' => true, 'status' => $donor->status]);
     }
 
     public function getStats()
@@ -149,6 +169,9 @@ class DashboardController extends Controller
         $totalDonors  = Donor::count();
         $availDonors  = Donor::where('status', 'Available')->count();
         $urgentReqs   = bloodrequests::where('urgent', 'Urgent')->count();
+        $fulfilledToday = Donor::where('status', 'Confirmed')
+                            ->whereDate('updated_at', today())
+                            ->count();
 
         $eligibleCount = Donor::all()->filter(function ($d) {
             if (!$d->last_donation) return true;
@@ -159,6 +182,7 @@ class DashboardController extends Controller
             'total_donors'  => $totalDonors,
             'avail_donors'  => $availDonors,
             'urgent_reqs'   => $urgentReqs,
+            'fulfilled_today' => $fulfilledToday,
             'eligible'      => $eligibleCount,
         ]);
     }
@@ -212,7 +236,8 @@ class DashboardController extends Controller
             'blood_group'   => $d->blood_group,
             'last_donation' => $d->last_donation,
             'status'        => $d->status,
-            'days_since'    => $d->last_donation ? now()->diffInDays($d->last_donation) : null,
+            'days_since'    => $d->last_donation ? max(0, now()->diffInDays($d->last_donation)) : null,
+            'eligible'      => !$d->last_donation || now()->diffInDays($d->last_donation) >= 90,
         ]);
 
         return response()->json([

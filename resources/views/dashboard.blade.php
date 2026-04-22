@@ -44,6 +44,10 @@
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
         .modal-overlay.open { display: flex; }
         .modal-box { background: white; border-radius: 2rem; padding: 2rem; width: 460px; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.15); }
+        .care-alert-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+        .care-alert-overlay.open { display: flex; }
+        .care-alert-box { background: white; border-radius: 2rem; padding: 2.5rem 2rem; width: 360px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.2); animation: popIn 0.3s cubic-bezier(0.175,0.885,0.32,1.275); }
+        @keyframes popIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="min-h-screen pb-24 relative">
@@ -76,7 +80,6 @@
                     <h2 class="text-xl font-extrabold text-gray-800">Donor Matching Engine</h2>
                     <p class="text-xs text-gray-500 mt-0.5" id="match-sub">Loading donors…</p>
                 </div>
-                <button onclick="document.getElementById('register-modal').classList.add('open')" class="bg-red-600 text-white font-black px-5 py-2.5 rounded-2xl text-sm hover:bg-red-700 transition shadow-lg shadow-red-200 active:scale-95">+ Register Donor</button>
             </div>
 
             <!-- Stats row -->
@@ -107,7 +110,7 @@
                 <table>
                     <thead><tr>
                         <th>#</th><th>Donor</th><th>Blood</th><th>Location</th>
-                        <th>Last Donation</th><th>Eligibility</th><th>Available</th><th>Action</th>
+                        <th>Last Donation</th><th>Eligibility</th><th>Compatibility</th><th>Action</th>
                     </tr></thead>
                     <tbody id="donors-tbody"><tr><td colspan="8" class="text-center py-8 text-gray-400 text-xs font-bold">Loading donors…</td></tr></tbody>
                 </table>
@@ -255,7 +258,6 @@
                         <option>Dhaka Medical College</option><option>Square Hospital</option>
                         <option>BIRDEM General Hospital</option><option>Apollo Hospitals Dhaka</option><option>United Hospital</option>
                     </select>
-                    <button onclick="document.getElementById('new-request-modal').classList.add('open')" class="bg-red-600 text-white font-black px-5 py-2.5 rounded-2xl text-sm hover:bg-red-700 transition shadow-lg shadow-red-200 active:scale-95">+ New Request</button>
                     <button onclick="loadHospitalData()" class="bg-white border border-gray-200 text-gray-600 font-bold px-4 py-2.5 rounded-2xl text-sm hover:bg-gray-50 transition">↻ Refresh</button>
                 </div>
             </div>
@@ -380,6 +382,19 @@
         </div>
     </div>
 
+    <!-- Care Alert Popup -->
+    <div class="care-alert-overlay" id="care-alert-overlay">
+        <div class="care-alert-box">
+            <div class="text-5xl mb-4" id="care-alert-icon">✅</div>
+            <h3 class="text-lg font-extrabold text-gray-800 mb-1" id="care-alert-title">Schedule Complete!</h3>
+            <p class="text-sm text-gray-500 mb-5" id="care-alert-msg">The care schedule window has been completed.</p>
+            <button onclick="document.getElementById('care-alert-overlay').classList.remove('open')"
+                class="w-full bg-red-600 text-white font-black py-3 rounded-2xl text-sm hover:bg-red-700 transition active:scale-95">
+                Got it!
+            </button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
     // ── TAB SWITCHING ─────────────────────────────────────────
@@ -400,6 +415,7 @@
     // ── GLOBALS ───────────────────────────────────────────────
     let allDonors = [], selectedDonorId = null, donorMap = null;
     const CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? '';
+    const careAlertFired = { hyd: {}, rest: {}, nut: {}, rec: {} }; // Track per donor
 
     // ── MODULE 1 ──────────────────────────────────────────────
     async function loadStats() {
@@ -442,7 +458,7 @@
                 <td class="text-xs text-gray-600">${d.location ?? '—'}</td>
                 <td class="text-xs font-mono text-gray-500">${d.last_donation ?? 'Never'}</td>
                 <td><span class="text-xs font-bold px-2 py-1 rounded-lg ${eligible ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-600'}">${eligible ? 'Eligible' : 'Not Eligible'}</span></td>
-                <td><span class="flex items-center gap-1.5 text-xs font-bold ${avail ? 'avail-yes' : 'avail-no'}"><span class="avail-dot"></span>${avail ? 'Available' : 'Unavailable'}</span></td>
+                <td><span class="flex items-center gap-1.5 text-xs font-bold ${avail ? 'avail-yes' : 'avail-no'}"><span class="avail-dot"></span>${avail ? 'Compatible' : 'Not Compatible'}</span></td>
                 <td><button onclick="event.stopPropagation();toggleAvail(${d.id},this)" class="text-[10px] font-bold px-3 py-1 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition">${avail ? 'Set Unavailable' : 'Set Available'}</button></td>
             </tr>`;
         }).join('');
@@ -531,11 +547,21 @@
 
     async function selectCareDonor(id) {
         selectedCareId = id;
+        // Don't reset alert fired state - alerts should only fire based on actual time conditions
         document.querySelectorAll('.care-donor-item').forEach(el => el.classList.remove('active'));
         document.getElementById('cdp-' + id)?.classList.add('active');
         const donor = careDonors.find(d => d.id == id);
         if (donor) {
             document.getElementById('rec-donor-name').textContent = donor.name;
+
+            // Reset all care fields to defaults first
+            document.getElementById('hyd-start').value = '08:00';
+            document.getElementById('hyd-end').value = '20:00';
+            document.getElementById('rest-start').value = '09:00';
+            document.getElementById('rest-end').value = '17:00';
+            document.getElementById('nut-start').value = '07:00';
+            document.getElementById('nut-end').value = '21:00';
+
             if (donor.last_donation) {
                 const days = Math.floor((Date.now() - new Date(donor.last_donation)) / 86400000);
                 const totalDays = 42; // 6 weeks
@@ -545,18 +571,24 @@
                 setRing('rec-ring', pct);
                 document.getElementById('rec-pct').textContent = pct + '%';
                 document.getElementById('rec-label').textContent = pct + '% recovered';
+                // Don't trigger alert on selection - let updateClocks handle it
             }
+
+            // Load saved care schedule for this donor
             try {
                 const r = await fetch('/api/dashboard/care/' + id);
                 if (r.ok) {
                     const care = await r.json();
-                    ['hyd','rest','nut'].forEach(prefix => {
-                        const map = {hyd:'hydration',rest:'rest',nut:'nutrition'};
-                        document.getElementById(prefix+'-start').value = (care[map[prefix]+'_start']||'').substring(0,5);
-                        document.getElementById(prefix+'-end').value   = (care[map[prefix]+'_end']||'').substring(0,5);
-                    });
+                    if (care.hydration_start) document.getElementById('hyd-start').value = care.hydration_start.substring(0,5);
+                    if (care.hydration_end) document.getElementById('hyd-end').value = care.hydration_end.substring(0,5);
+                    if (care.rest_start) document.getElementById('rest-start').value = care.rest_start.substring(0,5);
+                    if (care.rest_end) document.getElementById('rest-end').value = care.rest_end.substring(0,5);
+                    if (care.nutrition_start) document.getElementById('nut-start').value = care.nutrition_start.substring(0,5);
+                    if (care.nutrition_end) document.getElementById('nut-end').value = care.nutrition_end.substring(0,5);
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.log('No saved care schedule for this donor');
+            }
         }
     }
 
@@ -582,6 +614,61 @@
         document.getElementById(prefix+'-end').value = end;
     }
 
+    // ── CARE ALERT SYSTEM ─────────────────────────────────────
+    const careAlertConfig = {
+        hyd:  { icon: '💧', title: 'Hydration Complete!',  msg: 'The hydration window has ended. The donor has completed their hydration schedule.' },
+        rest: { icon: '🛌', title: 'Rest Period Complete!', msg: 'The rest reminder window has ended. The donor can gradually resume light activity.' },
+        nut:  { icon: '🥩', title: 'Nutrition Window Done!', msg: 'The nutrition boost window has ended. Iron levels should be replenishing.' },
+        rec:  { icon: '⏱', title: 'Full Recovery Reached!', msg: 'The donor has reached 100% recovery. Blood volume is fully replenished!' },
+    };
+
+    function hasAlertFired(donorId, type) {
+        if (careAlertFired[type][donorId] === undefined) {
+            careAlertFired[type][donorId] = false;
+        }
+        return careAlertFired[type][donorId];
+    }
+
+    function setAlertFired(donorId, type, value = true) {
+        if (careAlertFired[type][donorId] === undefined) {
+            careAlertFired[type][donorId] = false;
+        }
+        careAlertFired[type][donorId] = value;
+    }
+
+    function playCareSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const playBeep = (freq, start, dur) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = freq;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0, ctx.currentTime + start);
+                gain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + start + 0.02);
+                gain.gain.linearRampToValueAtTime(0, ctx.currentTime + start + dur);
+                osc.start(ctx.currentTime + start);
+                osc.stop(ctx.currentTime + start + dur + 0.05);
+            };
+            playBeep(880, 0,    0.15);
+            playBeep(1100, 0.18, 0.15);
+            playBeep(1320, 0.36, 0.25);
+        } catch(e) {}
+    }
+
+    function triggerCareAlert(type) {
+        if (!selectedCareId) return;
+        if (hasAlertFired(selectedCareId, type)) return;
+        setAlertFired(selectedCareId, type, true);
+        const cfg = careAlertConfig[type];
+        document.getElementById('care-alert-icon').textContent  = cfg.icon;
+        document.getElementById('care-alert-title').textContent = cfg.title;
+        document.getElementById('care-alert-msg').textContent   = cfg.msg;
+        document.getElementById('care-alert-overlay').classList.add('open');
+        playCareSound();
+    }
+
     function updateClocks() {
         const now = new Date();
         const hhmm = now.toTimeString().substring(0,8);
@@ -602,6 +689,7 @@
             const pct = toPct(s,e);
             setRing(p+'-ring', pct);
             document.getElementById(p+'-pct').textContent = pct + '%';
+            if (pct >= 100) triggerCareAlert(p);
         });
     }
     function setRing(id, pct) {
@@ -617,25 +705,24 @@
     async function loadHospitalData() {
         const hosp = document.getElementById('hosp-select').value;
         document.getElementById('hosp-last-refresh').textContent = 'Last refresh: ' + new Date().toLocaleTimeString();
-        const [rReqs, rConf] = await Promise.all([fetch('/api/dashboard/requests'), fetch('/api/dashboard/confirmations')]);
-        const [dReqs, dConf] = await Promise.all([rReqs.json(), rConf.json()]);
+        const [rReqs, rConf, rStats] = await Promise.all([fetch('/api/dashboard/requests'), fetch('/api/dashboard/confirmations'), fetch('/api/dashboard/stats')]);
+        const [dReqs, dConf, dStats] = await Promise.all([rReqs.json(), rConf.json(), rStats.json()]);
         allRequests = dReqs; allConfirmations = dConf;
         const urgent = allRequests.filter(r => r.urgent === 'Urgent').length;
-        const fulfilled = allRequests.filter(r => r.urgent !== 'Urgent').length;
         document.getElementById('hosp-stat-active').textContent = urgent;
-        document.getElementById('hosp-stat-fulfilled').textContent = fulfilled;
+        document.getElementById('hosp-stat-fulfilled').textContent = dStats.fulfilled_today || 0;
         document.getElementById('hosp-stat-confirmations').textContent = dConf.length;
         document.getElementById('hosp-stat-critical').textContent = urgent > 0 ? '1+' : '0';
         renderHospRequests();
         const confList = document.getElementById('hosp-confirmation-list');
         if (!dConf.length) { confList.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">No pending confirmations.</p>'; return; }
         confList.innerHTML = dConf.map(d => `
-            <div class="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 p-4">
+            <div class="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-100 p-4" id="conf-card-${d.id}">
                 <div class="flex items-center gap-2 mb-1"><p class="font-bold text-gray-800 text-sm">${d.name}</p><span class="blood-tag">${d.blood_group}</span></div>
                 <p class="text-xs text-gray-500 font-mono">${d.phone||'—'}</p>
                 <div class="flex gap-2 mt-3">
-                    <button class="flex-1 bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs hover:bg-emerald-700 transition active:scale-95">Confirm</button>
-                    <button class="flex-1 bg-white border border-gray-200 text-gray-600 font-bold py-1.5 rounded-xl text-xs hover:bg-gray-50 transition">Decline</button>
+                    <button onclick="handleDonorConfirmation(${d.id}, 'confirm', this)" class="flex-1 bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs hover:bg-emerald-700 transition active:scale-95">✓ Confirm</button>
+                    <button onclick="handleDonorConfirmation(${d.id}, 'decline', this)" class="flex-1 bg-white border border-red-200 text-red-600 font-bold py-1.5 rounded-xl text-xs hover:bg-red-50 transition active:scale-95">✕ Decline</button>
                 </div>
             </div>`).join('');
     }
@@ -668,6 +755,42 @@
         el.classList.remove('hidden');
         el.className = 'mb-4 p-3 rounded-xl text-xs font-bold ' + (type==='ok'?'bg-emerald-50 border border-emerald-200 text-emerald-700':'bg-red-50 border border-red-200 text-red-700');
         el.textContent = msg;
+    }
+
+    async function handleDonorConfirmation(donorId, action, btn) {
+        btn.disabled = true;
+        btn.textContent = '…';
+        try {
+            const r = await fetch('/api/dashboard/confirmations/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ donor_id: donorId, action: action })
+            });
+            const d = await r.json();
+            if (d.success) {
+                const card = document.getElementById('conf-card-' + donorId);
+                if (card) {
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(20px)';
+                    setTimeout(() => card.remove(), 300);
+                }
+                // Update confirmations counter
+                const stat = document.getElementById('hosp-stat-confirmations');
+                if (stat) stat.textContent = Math.max(0, (parseInt(stat.textContent) || 1) - 1);
+                // Increment fulfilled if confirmed
+                if (action === 'confirm') {
+                    const fulfilledStat = document.getElementById('hosp-stat-fulfilled');
+                    if (fulfilledStat) fulfilledStat.textContent = (parseInt(fulfilledStat.textContent) || 0) + 1;
+                }
+            } else {
+                btn.disabled = false;
+                btn.textContent = action === 'confirm' ? '✓ Confirm' : '✕ Decline';
+            }
+        } catch(e) {
+            btn.disabled = false;
+            btn.textContent = action === 'confirm' ? '✓ Confirm' : '✕ Decline';
+        }
     }
 
     // ── MODULE 4 ──────────────────────────────────────────────
@@ -704,9 +827,9 @@
         document.getElementById('an-donor-stats-tbody').innerHTML = d.donor_stats.map(ds => `<tr>
             <td class="font-bold text-gray-800 text-sm">${ds.name}</td>
             <td><span class="blood-tag">${ds.blood_group}</span></td>
-            <td class="text-xs font-mono text-gray-500">${ds.last_donation ?? 'Never'}</td>
+            <td class="text-xs font-mono text-gray-500">${ds.last_donation ? new Date(ds.last_donation).toLocaleDateString() : 'Never'}</td>
             <td class="text-xs font-bold text-gray-600">${ds.days_since ?? '—'} days</td>
-            <td><span class="text-xs font-black px-2 py-1 rounded-lg ${ds.status==='Available'?'bg-emerald-100 text-emerald-700':'bg-gray-100 text-gray-500'}">${ds.status}</span></td>
+            <td><span class="text-xs font-black px-2 py-1 rounded-lg ${ds.eligible ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}">${ds.eligible ? '✅ Can Donate' : '⏳ Not Ready'}</span></td>
         </tr>`).join('');
     }
 
