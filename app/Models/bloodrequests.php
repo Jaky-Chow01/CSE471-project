@@ -21,5 +21,7 @@ class bloodrequests extends Model
         'patientage',
         'patientgender',
         'contactno',
+        'latitude',
+        'longitude',
     ];
 }

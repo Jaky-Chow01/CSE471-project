@@ -151,14 +151,14 @@
                 const ll = [donor.location.lat, donor.location.lng];
                 const donorIcon = L.divIcon({ html: `<div style="background:#1d4ed8;width:12px;height:12px;border-radius:50%;border:3px solid white;box-shadow:0 0 0 2px #1d4ed8;"></div>`, iconSize:[12,12], iconAnchor:[6,6], className:'' });
                 L.marker(ll, { icon: donorIcon })
-                    .bindPopup(`<div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:140px"><b style="color:#dc2626;font-size:15px">${donor.name}</b><br><span style="font-size:12px;color:#555">Blood: ${bg}</span><hr style="margin:5px 0"><span style="font-size:12px"><b>Distance:</b> ${donor.distance}</span><br><span style="font-size:12px"><b>Est. Time:</b> ${donor.travel_time}</span></div>`)
+                    .bindPopup(`<div style="font-family:'Plus Jakarta Sans',sans-serif;min-width:140px"><b style="color:#dc2626;font-size:15px">${donor.name}</b><br><span style="font-size:12px;color:#555">Blood: ${bg}</span><hr style="margin:5px 0"><span style="font-size:11px;color:#888"><i class="fa fa-map-marker-alt"></i> ${donor.location_text}</span><hr style="margin:5px 0"><span style="font-size:12px"><b>Distance:</b> ${donor.distance}</span><br><span style="font-size:12px"><b>Est. Time:</b> ${donor.travel_time}</span></div>`)
                     .addTo(markersLayer);
                 bounds.extend(ll);
 
                 list.innerHTML += `<div class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-red-50 transition">
                     <div class="flex items-center gap-3">
                         <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-700 font-black text-sm">${bg}</div>
-                        <div><p class="font-bold text-gray-800 text-sm">${donor.name}</p><p class="text-xs text-gray-500">${donor.distance} away</p></div>
+                        <div><p class="font-bold text-gray-800 text-sm">${donor.name}</p><p class="text-xs text-gray-500">${donor.location_text}</p><p class="text-xs text-gray-400">${donor.distance} away</p></div>
                     </div>
                     <span class="text-xs font-bold text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-full">${donor.travel_time}</span>
                 </div>`;

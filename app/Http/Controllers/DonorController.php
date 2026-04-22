@@ -90,11 +90,12 @@ class DonorController extends Controller
         $results = $donors->map(function ($d) use ($userLat, $userLng) {
             $distKm = $this->haversine($userLat, $userLng, $d->latitude, $d->longitude);
             return [
-                'name'        => $d->name,
-                'location'    => ['lat' => $d->latitude, 'lng' => $d->longitude],
-                'distance'    => round($distKm, 2) . ' km',
-                'travel_time' => max(5, round(($distKm / 20) * 60)) . ' mins',
-                '_dist'       => $distKm,
+                'name'          => $d->name,
+                'location'      => ['lat' => $d->latitude, 'lng' => $d->longitude],
+                'location_text' => $d->location ?? 'Location not specified',
+                'distance'      => round($distKm, 2) . ' km',
+                'travel_time'   => max(5, round(($distKm / 20) * 60)) . ' mins',
+                '_dist'         => $distKm,
             ];
         })->sortBy('_dist')->values()->map(function ($d) {
             unset($d['_dist']);
