@@ -600,7 +600,15 @@
             nutrition_start: document.getElementById('nut-start').value+':00', nutrition_end: document.getElementById('nut-end').value+':00' };
         const r = await fetch('/api/dashboard/care', {method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}'},body:JSON.stringify(payload)});
         const d = await r.json();
-        showCareStatus(d.success ? 'ok' : 'error', d.success ? 'Schedule saved!' : 'Save failed.');
+        if (d.success) {
+            // Reset alert fired flags for this donor so alerts can fire again
+            setAlertFired(selectedCareId, 'hyd', false);
+            setAlertFired(selectedCareId, 'rest', false);
+            setAlertFired(selectedCareId, 'nut', false);
+            showCareStatus('ok', 'Schedule saved!');
+        } else {
+            showCareStatus('error', 'Save failed.');
+        }
     }
     function showCareStatus(type, msg) {
         const el = document.getElementById('care-status');
@@ -612,6 +620,10 @@
     function resetCareCard(prefix, start, end) {
         document.getElementById(prefix+'-start').value = start;
         document.getElementById(prefix+'-end').value = end;
+        // Reset alert flag so it can fire again for the new time window
+        if (selectedCareId) {
+            setAlertFired(selectedCareId, prefix, false);
+        }
     }
 
     // ── CARE ALERT SYSTEM ─────────────────────────────────────
@@ -636,7 +648,7 @@
         careAlertFired[type][donorId] = value;
     }
 
-    function playCareSound() {
+    function playCareSound(type = 'rec') {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const playBeep = (freq, start, dur) => {
@@ -651,9 +663,29 @@
                 osc.start(ctx.currentTime + start);
                 osc.stop(ctx.currentTime + start + dur + 0.05);
             };
-            playBeep(880, 0,    0.15);
-            playBeep(1100, 0.18, 0.15);
-            playBeep(1320, 0.36, 0.25);
+
+            // Different sound patterns for each care type
+            if (type === 'hyd') {
+                // Hydration: ascending water droplet sounds
+                playBeep(523, 0,    0.1);   // C5
+                playBeep(659, 0.12, 0.1);  // E5
+                playBeep(784, 0.24, 0.15); // G5
+            } else if (type === 'rest') {
+                // Rest: calm, lower tones
+                playBeep(392, 0,    0.2);   // G4
+                playBeep(440, 0.22, 0.2);  // A4
+                playBeep(392, 0.44, 0.25); // G4
+            } else if (type === 'nut') {
+                // Nutrition: energetic, mixed tones
+                playBeep(660, 0,    0.12);  // E5
+                playBeep(880, 0.14, 0.12); // A5
+                playBeep(660, 0.28, 0.15); // E5
+            } else if (type === 'rec') {
+                // Recovery: celebratory ascending tones
+                playBeep(880, 0,    0.15);
+                playBeep(1100, 0.18, 0.15);
+                playBeep(1320, 0.36, 0.25);
+            }
         } catch(e) {}
     }
 
@@ -666,7 +698,7 @@
         document.getElementById('care-alert-title').textContent = cfg.title;
         document.getElementById('care-alert-msg').textContent   = cfg.msg;
         document.getElementById('care-alert-overlay').classList.add('open');
-        playCareSound();
+        playCareSound(type);
     }
 
     function updateClocks() {
@@ -691,6 +723,28 @@
             document.getElementById(p+'-pct').textContent = pct + '%';
             if (pct >= 100) triggerCareAlert(p);
         });
+
+        // Update recovery clock if a donor is selected
+        if (selectedCareId) {
+            const donor = careDonors.find(d => d.id == selectedCareId);
+            if (donor && donor.last_donation) {
+                const days = Math.floor((Date.now() - new Date(donor.last_donation)) / 86400000);
+                const totalDays = 42; // 6 weeks
+                const recPct = Math.min(100, Math.round(days / totalDays * 100));
+                document.getElementById('rec-bar').style.width = recPct + '%';
+                setRing('rec-ring', recPct);
+                document.getElementById('rec-pct').textContent = recPct + '%';
+                document.getElementById('rec-label').textContent = recPct + '% recovered';
+                if (recPct >= 100) {
+                    const cfg = careAlertConfig['rec'];
+                    document.getElementById('care-alert-icon').textContent = cfg.icon;
+                    document.getElementById('care-alert-title').textContent = cfg.title;
+                    document.getElementById('care-alert-msg').textContent = cfg.msg;
+                    document.getElementById('care-alert-overlay').classList.add('open');
+                    playCareSound('rec');
+                }
+            }
+        }
     }
     function setRing(id, pct) {
         const el = document.getElementById(id);
