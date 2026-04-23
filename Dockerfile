@@ -1,7 +1,9 @@
 FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y \
-    git curl unzip libonig-dev libzip-dev zip \
+    git curl unzip zip \
+    libonig-dev libzip-dev \
+    libpq-dev \
     && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring zip
 
 RUN a2enmod rewrite
