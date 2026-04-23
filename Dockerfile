@@ -24,5 +24,5 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 storage bootstrap/cache
 
 EXPOSE 80
-
+RUN touch /tmp/database.sqlite && chmod 777 /tmp/database.sqlite
 CMD php artisan migrate --force && apache2-foreground
